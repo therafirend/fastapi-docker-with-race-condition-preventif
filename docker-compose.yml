@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  #mysql database
+  db:
+    image: mysql:latest
+    ports:
+      - "127.0.0.1:3306:3306"
+    command: --init-file /data/application/init.sql
+    volumes:
+      - ./mysql/init.sql:/data/application/init.sql
+      - evermos_mysql:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: evermos
+      MYSQL_USER: test
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    networks:
+      - evermos-net
+  
+  #phpmyadmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: unless-stopped
+    environment:
+      - PMA_HOST = db
+      - PMA_PORT = 3306
+    depends_on:
+      - db
+    ports:
+     - "127.0.0.1:80:80"
+
+  #fastapi
+  app:
+    container_name: app
+    build: .
+    command: bash -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - .:/app
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    restart: always
+    networks:
+      - evermos-net
+volumes:
+  evermos_mysql:
+
+networks:
+  evermos-net:
+    driver: bridge
