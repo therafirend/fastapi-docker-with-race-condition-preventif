@@ -25,11 +25,11 @@ def test_race_condition(start_race):
         client.patch(
             "api/v1/items/update_stock/1",
             json={
-                "stock": 200
+                "stock": 1000
             },
         )
     # thread_num adalah jumlah thread yang mengakses API secara bersamaan
-    start_race(threads_num=10, target=actual_test)
+    start_race(threads_num=3, target=actual_test)
 
     # cek hasil update data apakah terpengaruh thread lain
     response = client.get(
@@ -38,7 +38,7 @@ def test_race_condition(start_race):
     assert response.json() == {
         "id": 1,
         "name": "Foo Bar",
-        "stock": 1800
+        "stock": 1000
     }
 
 
@@ -56,11 +56,11 @@ def test_race_condition2(start_race):
         client.patch(
             "api/v1/items/update_stock_race/2",
             json={
-                "stock": 200
+                "stock": 1000
             },
         )
 
-    start_race(threads_num=10, target=actual_test)
+    start_race(threads_num=3, target=actual_test)
 
     # cek hasil update data apakah terpengaruh thread lain
     response = client.get(
@@ -69,7 +69,7 @@ def test_race_condition2(start_race):
     assert response.json() != {
         "id": 2,
         "name": "Foo Bar",
-        "stock": 1800
+        "stock": 1000
     }
 
 
