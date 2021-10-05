@@ -32,44 +32,48 @@ def create(req: item_schemas.Item, db: Session = Depends(get_db)):
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=jsonable_encoder(res))
 
 
-# def update_stock(id: int, req: item_schemas.UpdateStock, db: Session = Depends(get_db)):
-#     with db.begin():
-#         item = db.query(item_model.Item).filter(item_model.Item.id == id)
-#
-#         result = item.first().stock - req.stock
-#         if not item.first():
-#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-#                                 detail=f"Item with id {id} not found")
-#
-#         if item.first().stock <= 0 or result < 0:
-#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-#                                 detail=f"Item with id {id} out of stock")
-#         item.update({
-#             "stock": result
-#         })
-#         db.commit()
-#     res = {
-#         'message': 'Item Updated'
-#     }
-#     return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder(res))
 def update_stock(id: int, req: item_schemas.UpdateStock, db: Session = Depends(get_db)):
-    item = db.execute(
-        text("SELECT stock FROM items WHERE x = :x").bindparams(x=req.stock)
-    )
+    with db.begin():
+        item = db.query(item_model.Item).filter(item_model.Item.id == id)
+        result = item.first().stock - req.stock
+        if not item.first():
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"Item with id {id} not found")
 
+        if item.first().stock <= 0 or result < 0:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"Item with id {id} out of stock")
+        item.update({
+            "stock": result
+        })
+        db.commit()
+    res = {
+        'message': 'Item Updated'
+    }
+    return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder(res))
+
+
+def update_stock_race(id: int, req: item_schemas.UpdateStock, db: Session = Depends(get_db)):
+    item = db.execute(
+        text("select stock from items where id=:x"), [{"x": id}])
+
+    result = 0
     for row in item:
-        result = row.stock - req.stock
+        result = row['stock'] - req.stock
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Item with id {id} not found")
-        db.rollback()
-    if item.stock <= 0 or result < 0:
+
+    if result <= 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Item with id {id} out of stock")
-        db.rollback()
-    item.update({
-        "stock": result
-    })
+    db.execute(
+        text(
+            "UPDATE items SET stock=stock-:y WHERE id=:x"), [{"y": req.stock, "x": id}]
+    )
+
     db.commit()
 
     res = {

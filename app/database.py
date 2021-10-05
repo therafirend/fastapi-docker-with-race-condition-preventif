@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@127.0.0.1:3306/fastapi_test?charset=utf8mb4"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(SQLALCHEMY_DATABASE_URL, isolation_level="REPEATABLE READ")
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
