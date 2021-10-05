@@ -36,7 +36,7 @@ Setelah menginstall docker selanjutnya dapat menjalankan command berikut untuk m
 docker compose up
 ```
 
-### Tanpda Docker
+### Tanpa Docker
 
 #### Setting Database
 
