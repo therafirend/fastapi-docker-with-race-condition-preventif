@@ -43,7 +43,7 @@ def update_stock(id: int, req: item_schemas.UpdateStock, db: Session = Depends(g
 
         if item.first().stock <= 0 or result < 0:
             db.rollback()
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail=f"Item with id {id} out of stock")
         item.update({
             "stock": result
@@ -67,7 +67,7 @@ def update_stock_race(id: int, req: item_schemas.UpdateStock, db: Session = Depe
                             detail=f"Item with id {id} not found")
 
     if result <= 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=f"Item with id {id} out of stock")
     db.execute(
         text(
